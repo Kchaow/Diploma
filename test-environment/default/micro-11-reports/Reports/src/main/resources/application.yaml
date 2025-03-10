@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: Reports
+
+server:
+  port: 8011
+  servlet:
+    context-path: /api/v1
+
+integration:
+  logging-url: http://localhost:8012/api/v1

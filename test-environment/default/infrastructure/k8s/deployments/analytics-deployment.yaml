@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics
+spec:
+  selector:
+    matchLabels:
+      app: analytics
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: analytics
+        common-label: microservice
+    spec:
+      containers:
+      - name: analytics
+        image: analytics
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8010

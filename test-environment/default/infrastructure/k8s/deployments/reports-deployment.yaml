@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reports
+spec:
+  selector:
+    matchLabels:
+      app: reports
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: reports
+        common-label: microservice
+    spec:
+      containers:
+      - name: reports
+        image: reports
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8011

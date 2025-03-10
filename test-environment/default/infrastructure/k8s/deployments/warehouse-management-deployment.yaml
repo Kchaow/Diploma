@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: warehouse-management
+spec:
+  selector:
+    matchLabels:
+      app: warehouse-management
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: warehouse-management
+        common-label: microservice
+    spec:
+      containers:
+      - name: warehouse-management
+        image: warehouse-management
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8007

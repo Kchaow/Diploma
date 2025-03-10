@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-processing
+spec:
+  selector:
+    matchLabels:
+      app: order-processing
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: order-processing
+        common-label: microservice
+    spec:
+      containers:
+      - name: order-processing
+        image: order-processing
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8005

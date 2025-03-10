@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logging
+spec:
+  selector:
+    matchLabels:
+      app: logging
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: logging
+        common-label: microservice
+    spec:
+      containers:
+      - name: logging
+        image: logging
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8012

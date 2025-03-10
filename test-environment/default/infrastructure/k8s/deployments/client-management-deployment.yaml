@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-management
+spec:
+  selector:
+    matchLabels:
+      app: client-management
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: client-management
+        common-label: microservice
+    spec:
+      containers:
+      - name: client-management
+        image: client-management
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8002

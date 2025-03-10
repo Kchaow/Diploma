@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-profiles
+spec:
+  selector:
+    matchLabels:
+      app: client-profiles
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: client-profiles
+        common-label: microservice
+    spec:
+      containers:
+      - name: client-profiles
+        image: client-profiles
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8003

@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: microservices-service
+spec:
+  selector:
+    common-label: microservice
+  ports:
+  - name: product-catalog-management
+    protocol: "TCP"
+    port: 8001
+    targetPort: 8001
+  - name: client-management
+    protocol: "TCP"
+    port: 8002
+    targetPort: 8002
+  - name: client-profiles
+    protocol: "TCP"
+    port: 8003
+    targetPort: 8003
+  - name: order-management
+    protocol: "TCP"
+    port: 8004
+    targetPort: 8004
+  - name: order-processing
+    protocol: "TCP"
+    port: 8005
+    targetPort: 8005
+  - name: warehouse-management
+    protocol: "TCP"
+    port: 8007
+    targetPort: 8007
+  - name: notifications
+    protocol: "TCP"
+    port: 8008
+    targetPort: 8008
+  - name: email-service
+    protocol: "TCP"
+    port: 8009
+    targetPort: 8009
+  - name: analytics
+    protocol: "TCP"
+    port: 8010
+    targetPort: 8010
+  - name: reports
+    protocol: "TCP"
+    port: 8011
+    targetPort: 8011
+  - name: logging
+    protocol: "TCP"
+    port: 8012
+    targetPort: 8012
+  type: NodePort

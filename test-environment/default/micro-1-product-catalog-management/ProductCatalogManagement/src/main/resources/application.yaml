@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: ProductCatalogManagement
+
+server:
+  port: 8001
+  servlet:
+    context-path: /api/v1

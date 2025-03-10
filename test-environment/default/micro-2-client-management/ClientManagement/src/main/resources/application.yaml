@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: ClientManagement
+
+server:
+  port: 8002
+  servlet:
+    context-path: /api/v1
+
+integration:
+  order-processing-url: http://localhost:8005/api/v1

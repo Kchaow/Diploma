@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: OrderManagement
+
+server:
+  port: 8004
+  servlet:
+    context-path: /api/v1
+
+integration:
+  product-catalog-management-url: http://localhost:8001/api/v1
+  order-processing-url: http://localhost:8005/api/v1

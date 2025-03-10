@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-management
+spec:
+  selector:
+    matchLabels:
+      app: order-management
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: order-management
+        common-label: microservice
+    spec:
+      containers:
+      - name: order-management
+        image: order-management
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8004
