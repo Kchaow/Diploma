@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: Notifications
+
+server:
+  port: 8008
+  servlet:
+    context-path: /api/v1
+
+integration:
+  email-service-url: http://localhost:8009/api/v1
+  logging-service-url: http://localhost:8012/api/v1
