@@ -20,6 +20,13 @@ public interface MicroserviceNeo4jRepository extends Neo4jRepository<Microservic
     List<String> findMicroservicesRequiredMicroservice(String microserviceName);
 
     @Query("""
+        MATCH (m:Microservice)-[c:CONSUMES]->(:Contract)
+        WHERE c.serviceName IN $microservicesNames
+        RETURN m.name
+        """)
+    List<String> findMicroservicesRequiredMicroservices(List<String> microservicesNames);
+
+    @Query("""
         MATCH (:Microservice {name: $microserviceName})-[c:CONSUMES]->(:Contract)
         DELETE c
         """)

@@ -1,22 +1,21 @@
 package letunov.microservice.integrity.adapter.rest;
 
 import io.swagger.v3.oas.annotations.Operation;
-import letunov.microservice.integrity.adapter.rest.dto.GraphDto;
-import letunov.microservice.integrity.adapter.rest.dto.MicroserviceDto;
-import letunov.microservice.integrity.adapter.rest.dto.VerificationDto;
+import letunov.microservice.integrity.adapter.rest.dto.*;
 import letunov.microservice.integrity.adapter.rest.mapper.GraphMapper;
-import letunov.microservice.integrity.app.api.graph.GetGraphByIdInbound;
+import letunov.microservice.integrity.app.api.change.graph.*;
+import letunov.microservice.integrity.app.api.graph.GetChangeGraphByIdInbound;
 import letunov.microservice.integrity.app.api.graph.GetGraphInbound;
 import letunov.microservice.integrity.app.api.graph.UpdateGraphWithMicroserviceInbound;
 import letunov.microservice.integrity.app.api.verification.VerifyGraphInbound;
-import letunov.microservice.integrity.app.api.verification.VerifyMicroserviceInbound;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/graph")
 @CrossOrigin(origins = "*")
 @Slf4j
 @RequiredArgsConstructor
@@ -24,12 +23,15 @@ public class MicroserviceIntegrityController {
     private final UpdateGraphWithMicroserviceInbound updateGraphWithMicroserviceInbound;
     private final GetGraphInbound getGraphInbound;
     private final GraphMapper graphMapper;
-    private final VerifyMicroserviceInbound verifyMicroserviceInbound;
-    private final GetGraphByIdInbound getGraphByIdInbound;
+    private final GetChangeGraphByIdInbound getChangeGraphByIdInbound;
     private final VerifyGraphInbound verifyGraphInbound;
+    private final CreateChangeGraphInbound createChangeGraphInbound;
+    private final CommitMicroserviceInbound commitMicroserviceInbound;
+    private final VerifyChangeGraphInbound verifyChangeGraphInbound;
+    private final GetChangeGraphsInbound getChangeGraphsInbound;
 
     @Operation(summary = "Изменение графа")
-    @PostMapping("/microservice")
+    @PostMapping("/graph/microservice")
     public void updateGraph(@RequestBody MicroserviceDto microserviceDto) {
         log.info("[updateGraph] request; microserviceDto: {}", microserviceDto);
         var microserviceInfo = graphMapper.toMicroserviceInfo(microserviceDto);
@@ -37,33 +39,56 @@ public class MicroserviceIntegrityController {
     }
 
     @Operation(summary = "Получение всего графа")
-    @GetMapping
+    @GetMapping("/graph")
     public ResponseEntity<GraphDto> getGraph() {
         log.info("[getGraph] request;");
         var graph = getGraphInbound.execute();
         return ResponseEntity.ok(graphMapper.toGraphDto(graph));
     }
 
-    @Operation(summary = "Получение графа изменений по id")
-    @GetMapping("/{id}")
-    public ResponseEntity<GraphDto> getGraphById(@PathVariable String id) {
-        log.info("[getGraphById] request; id: {}", id);
-        var graph = getGraphByIdInbound.execute(id);
-        return ResponseEntity.ok(graphMapper.toGraphDto(graph));
-    }
-
-    @Operation(summary = "Создание графа изменений")
-    @PostMapping("/verify")
-    public ResponseEntity<VerificationDto> verify(@RequestBody MicroserviceDto microserviceDto) {
-        log.info("[verify] request; microserviceDto: {}", microserviceDto);
-        var verificationInfo = verifyMicroserviceInbound.execute(graphMapper.toMicroserviceInfo(microserviceDto));
-        return ResponseEntity.ok(graphMapper.toVerificationDto(verificationInfo));
-    }
-
     @Operation(summary = "Обновление графа")
-    @PostMapping("/update")
+    @PostMapping("/graph/update")
     public void updateGraph() {
         log.info("[updateGraph] request;");
         verifyGraphInbound.execute();
+    }
+
+    @Operation(summary = "Создать граф изменений")
+    @PostMapping("/change-graph")
+    public ResponseEntity<CreatedChangeGraphInfoDto> createChangeGraph(@RequestBody CreateChangeGraphDto createChangeGraphDto) {
+        log.info("[createChangeGraph] request; createChangeGraphDto: {}", createChangeGraphDto);
+        var result = createChangeGraphInbound.execute(createChangeGraphDto.associatedMicroservices());
+        return ResponseEntity.ok(graphMapper.toCreatedChangeGraphInfoDto(result));
+    }
+
+    @Operation(summary = "Добавить микросервис в граф изменений")
+    @PutMapping("/change-graph/{id}")
+    public void commitMicroservice(@RequestBody MicroserviceDto microserviceDto, @PathVariable String id) {
+        log.info("[commitMicroservice] request; microserviceDto: {}; id: {}", microserviceDto, id);
+        commitMicroserviceInbound.execute(graphMapper.toMicroserviceInfo(microserviceDto), id);
+    }
+
+    @Operation(summary = "Верифицировать граф изменений")
+    @PutMapping("/change-graph/{id}/verify")
+    public ResponseEntity<VerificationResultDto> verifyChangeGraph(@PathVariable String id) {
+        log.info("[verifyChangeGraph] request; id: {}", id);
+        var result = verifyChangeGraphInbound.execute(id);
+        return ResponseEntity.ok(graphMapper.toVerificationResultDto(result));
+    }
+
+    @Operation(summary = "Получить графы изменений")
+    @GetMapping("/change-graph")
+    public List<ChangeGraphsInfoDto> getChangeGraphs() {
+        log.info("[getChangeGraphs] request;");
+        var result = getChangeGraphsInbound.execute();
+        return graphMapper.toChangeGraphsInfoDtoList(result);
+    }
+
+    @Operation(summary = "Получение графа изменений по id")
+    @GetMapping("/change-graph/{id}")
+    public ResponseEntity<GraphDto> getGraphById(@PathVariable String id) {
+        log.info("[getGraphById] request; id: {}", id);
+        var graph = getChangeGraphByIdInbound.execute(id);
+        return ResponseEntity.ok(graphMapper.toGraphDto(graph.getGraph()));
     }
 }

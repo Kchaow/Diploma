@@ -14,6 +14,8 @@ public interface MicroserviceRepository {
 
     List<Microservice> findMicroservicesRequiredMicroservice(String microserviceName);
 
+    List<Microservice> findMicroservicesRequiredMicroservices(List<String> microservicesNames);
+
     void saveAll(List<Microservice> microservices);
 
     Microservice save(Microservice microservice);

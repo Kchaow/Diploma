@@ -1,14 +1,15 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-// import Graph from './graph/Graph';
-import Main from './pages/main/Main';
+import GraphPage from './pages/graph/GraphPage';
+import ChangeGraphsPage from './pages/changeGraphs/ChangeGraphsPage';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="*" element={<Main />}/>
-        <Route path="/graph/:graphId" element={<Main />} />
+        <Route path="*" element={<GraphPage />}/>
+        <Route path="/graph/:graphId" element={<GraphPage />} />
+        <Route path="/change-graph" element={<ChangeGraphsPage />} />
       </Routes>
     </BrowserRouter>
   );

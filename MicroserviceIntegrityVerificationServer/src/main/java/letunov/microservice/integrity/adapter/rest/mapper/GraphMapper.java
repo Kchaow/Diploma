@@ -1,13 +1,21 @@
 package letunov.microservice.integrity.adapter.rest.mapper;
 
 import letunov.microservice.integrity.adapter.rest.dto.*;
-import letunov.microservice.integrity.app.api.graph.*;
+import letunov.microservice.integrity.app.api.change.graph.ChangeGraphInfo;
+import letunov.microservice.integrity.app.api.change.graph.ChangeGraphsInfo;
+import letunov.microservice.integrity.app.api.change.graph.VerificationResult;
 import letunov.microservice.integrity.app.api.verification.VerificationInfo;
 import letunov.microservice.integrity.domain.contract.Edge;
 import letunov.microservice.integrity.domain.contract.Node;
-import letunov.microservice.integrity.domain.graph.Graph;
+import letunov.microservice.integrity.domain.graph.*;
+import letunov.microservice.integrity.domain.graph.microservice.ConsumingContractInfo;
+import letunov.microservice.integrity.domain.graph.microservice.DependencyInfo;
+import letunov.microservice.integrity.domain.graph.microservice.MicroserviceInfo;
+import letunov.microservice.integrity.domain.graph.microservice.ProvidingContractInfo;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+
+import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface GraphMapper {
@@ -31,4 +39,12 @@ public interface GraphMapper {
     DependencyInfo toDependencyInfo(DependencyDto dependencyDto);
 
     VerificationDto toVerificationDto(VerificationInfo verificationInfo);
+
+    CreatedChangeGraphInfoDto toCreatedChangeGraphInfoDto(ChangeGraphInfo changeGraphInfo);
+
+    ChangeGraphsInfoDto toChangeGraphsInfoDto(ChangeGraphsInfo changeGraphsInfo);
+
+    List<ChangeGraphsInfoDto> toChangeGraphsInfoDtoList(List<ChangeGraphsInfo> changeGraphsInfoList);
+
+    VerificationResultDto toVerificationResultDto(VerificationResult verificationResult);
 }

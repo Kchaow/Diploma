@@ -1,4 +1,4 @@
-package letunov.microservice.integrity.app.api.graph;
+package letunov.microservice.integrity.domain.graph.microservice;
 
 import lombok.Data;
 

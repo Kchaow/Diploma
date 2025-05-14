@@ -34,61 +34,90 @@ public class MicroserviceVerificationServiceImpl implements MicroserviceVerifica
     private final MicroserviceRepository microserviceRepository;
     private final ContractRepository contractRepository;
 
+    //где-нибудь нужна валидация, чтобы микросервисы не реализывали контракты, которые сами требуют
     @Override
     @Transactional
-    public List<Issue> verify(Microservice microservice) {
-        List<Issue> issues = new ArrayList<>();
+    public List<Issue> verify(List<Microservice> microservices) {
+        Set<Issue> issues = new HashSet<>();
 
-        issues.addAll(verifyConsumingContracts(microservice));
-        issues.addAll(verifyProvidingContracts(microservice));
+        microservices.forEach(microservice -> {
+            issues.addAll(verifyConsumingContracts(microservice, microservices));
+            issues.addAll(verifyProvidingContracts(microservice, microservices));
+        });
 
-        return issues;
+        return new ArrayList<>(issues);
     }
 
     // ===================================================================================================================
     // = Implementation
     // ===================================================================================================================
 
-    private List<Issue> verifyConsumingContracts(Microservice microservice) {
-        Map<String, List<Contract>> requiredContractsWithRequiredServices = getRequiredContractsWithRequiredMicroservices(microservice);
-        Map<String, List<Contract>> providingContractsWithMicroservices = getProvidingContractsWithMicroservices(requiredContractsWithRequiredServices);
+    private List<Issue> verifyConsumingContracts(Microservice microservice, List<Microservice> additiveMicroservices) {
+        Map<String, List<Contract>> requiredContractsWithRequiredServices = microservice.getConsumingContracts().stream()
+            .collect(
+                groupingBy(ConsumingRelationship::getServiceName,
+                    mapping(ConsumingRelationship::getContract, toList())));
+        Map<String, List<Contract>> providingContractsWithMicroservices = getProvidingContractsWithMicroservices(requiredContractsWithRequiredServices, additiveMicroservices, microservice);
+        Map<String, Microservice> additiveMicroservicesMap = additiveMicroservices.stream()
+            .collect(Collectors.toMap(Microservice::getName, identity()));
 
-        return getConsumingIssues(microservice, requiredContractsWithRequiredServices, providingContractsWithMicroservices);
+        return getConsumingIssues(microservice, requiredContractsWithRequiredServices, providingContractsWithMicroservices, additiveMicroservicesMap);
     }
 
-    private List<Issue> verifyProvidingContracts(Microservice microservice) {
-        Map<String, Contract> providingContractsWithNames = microservice.getProvidingContracts().stream().collect(toMap(Contract::getName, identity()));
-        Map<String, List<Contract>> requiredContractsByMicroservices = contractRepository.findRequiredContractsByMicroservices(microservice.getName()); //заранее вытащить все микросервисы
+    private List<Issue> verifyProvidingContracts(Microservice microservice, List<Microservice> additiveMicroservices) {
+        Map<String, Contract> providingContractsMap = microservice.getProvidingContracts().stream().collect(toMap(Contract::getName, identity()));
 
-        return getProvidingIssues(requiredContractsByMicroservices, providingContractsWithNames, microservice);
+        Map<String, List<Contract>> requiredContractsByMicroservices = new HashMap<>();
+        Map<String, List<Contract>> requiredContractsByMicroservicesFromRepo = contractRepository.findRequiredContractsByMicroservices(microservice.getName()); //заранее вытащить все микросервисы
+        Map<String, List<Contract>> requiredContractsByMicroservicesFromAdditive = additiveMicroservices.stream()
+            .collect(Collectors.toMap(Microservice::getName, additiveMicroservice -> additiveMicroservice.getConsumingContracts().stream()
+                .filter(consumingRelationship -> consumingRelationship.getServiceName().equals(microservice.getName()))
+                .map(ConsumingRelationship::getContract)
+                .toList()));
+        requiredContractsByMicroservices.putAll(requiredContractsByMicroservicesFromRepo);
+        requiredContractsByMicroservices.putAll(requiredContractsByMicroservicesFromAdditive);
+        requiredContractsByMicroservices.put(microservice.getName(), new ArrayList<>());
+        Map<String, Microservice> additiveMicroservicesMap = additiveMicroservices.stream()
+            .collect(Collectors.toMap(Microservice::getName, identity()));
+
+        return getProvidingIssues(requiredContractsByMicroservices, providingContractsMap, microservice, additiveMicroservicesMap);
     }
 
     private List<Issue> getConsumingIssues(Microservice microservice, Map<String, List<Contract>> requiredContractsByRequiredServices,
-        Map<String, List<Contract>> providingContractsByMicroservices) {
+        Map<String, List<Contract>> providingContractsByMicroservices, Map<String, Microservice> additiveMicroservices) {
         List<Issue> issues = new ArrayList<>();
         requiredContractsByRequiredServices.forEach((requiredMicroserviceName, contracts) ->
             contracts.forEach(contract -> {
                 var providedContract = ofNullable(providingContractsByMicroservices.get(requiredMicroserviceName))
                     .flatMap(providedContracts -> getContractByName(providedContracts, contract.getName()));
 
-                microserviceRepository.findByName(requiredMicroserviceName)
-                    .ifPresentOrElse(requiredMicroservice ->
-                        verify(providedContract.isEmpty(), requiredMicroservice, requiredMicroserviceName, providedContract.orElse(null), contract, microservice)
-                            .ifPresent(issues::add),
-                        () -> issues.add(createIssue(null, requiredMicroserviceName, of(contract), microservice, IssueType.MICROSERVICE_DOES_NOT_EXIST, ERROR)));
+                if (providingContractsByMicroservices.containsKey(requiredMicroserviceName)) {
+                    var requiredMicroservice = ofNullable(additiveMicroservices.get(requiredMicroserviceName))
+                        .or(() -> microserviceRepository.findByName(requiredMicroserviceName))
+                        .orElseThrow();
+                    verify(providedContract.isEmpty(), requiredMicroservice, requiredMicroserviceName, providedContract.orElse(null), contract, microservice)
+                        .ifPresent(issues::add);
+                } else {
+                    issues.add(createIssue(null, requiredMicroserviceName, of(contract), microservice, IssueType.MICROSERVICE_DOES_NOT_EXIST, ERROR));
+                }
         }));
         return issues;
     }
 
-    private List<Issue> getProvidingIssues(Map<String, List<Contract>> requiredContractsByMicroservices, Map<String, Contract> providingContractsWithNames, Microservice microservice) {
+    private List<Issue> getProvidingIssues(Map<String, List<Contract>> requiredContractsByMicroservices, Map<String, Contract> providingContractsMap,
+        Microservice microservice, Map<String, Microservice> additiveMicroservices) {
         List<Issue> issues = new ArrayList<>();
         requiredContractsByMicroservices.forEach((consumerName, contracts) -> contracts.forEach(contract -> {
-            var providedContract = providingContractsWithNames.get(contract.getName());
-            microserviceRepository.findByName(consumerName).flatMap(
-                    consumer -> verify(!providingContractsWithNames.containsKey(contract.getName()), microservice, microservice.getName(), providedContract, contract, consumer))
-                .ifPresent(issues::add);
+            var providedContract = providingContractsMap.get(contract.getName());
+            if (requiredContractsByMicroservices.containsKey(consumerName)) {
+                var consumer = ofNullable(additiveMicroservices.get(consumerName))
+                    .or(() -> microserviceRepository.findByName(consumerName))
+                    .orElseThrow();
+                verify(!providingContractsMap.containsKey(contract.getName()), microservice, microservice.getName(), providedContract, contract, consumer)
+                    .ifPresent(issues::add);
+            }
         }));
-        issues.addAll(getNotRequiredIssues(requiredContractsByMicroservices, providingContractsWithNames, microservice));
+        issues.addAll(getNotRequiredIssues(requiredContractsByMicroservices, providingContractsMap, microservice));
         return issues;
     }
 
@@ -138,16 +167,19 @@ public class MicroserviceVerificationServiceImpl implements MicroserviceVerifica
         };
     }
 
-    private Map<String, List<Contract>> getRequiredContractsWithRequiredMicroservices(Microservice microservice) {
-        return microservice.getConsumingContracts().stream()
-            .collect(
-                groupingBy(ConsumingRelationship::getServiceName,
-                    mapping(ConsumingRelationship::getContract, toList())));
-    }
+    private Map<String, List<Contract>> getProvidingContractsWithMicroservices(Map<String, List<Contract>> requiredContractsWithRequiredServices,
+        List<Microservice> additiveMicroservices, Microservice currentMicroservice) {
+        Map<String, List<Contract>> result = new HashMap<>();
 
-    private Map<String, List<Contract>> getProvidingContractsWithMicroservices(Map<String, List<Contract>> requiredContractsWithRequiredServices) {
+        Map<String, List<Contract>> providingContractsWithMicroservicesFromAdditive = additiveMicroservices.stream()
+            .collect(Collectors.toMap(Microservice::getName, Microservice::getProvidingContracts));
         List<String> requiredMicroservices = requiredContractsWithRequiredServices.keySet().stream().toList();
-        return contractRepository.findProvidedContractsByMicroservices(requiredMicroservices);
+        Map<String, List<Contract>> providingContractsWithMicroservicesFromRepo = contractRepository.findProvidedContractsByMicroservices(requiredMicroservices);
+        result.putAll(providingContractsWithMicroservicesFromRepo);
+        result.putAll(providingContractsWithMicroservicesFromAdditive);
+        result.remove(currentMicroservice.getName());
+
+        return result;
     }
 
     private List<Issue> getNotRequiredIssues(Map<String, List<Contract>> requiredContractsByMicroservices, Map<String, Contract> providingContractsWithNames, Microservice microservice) {

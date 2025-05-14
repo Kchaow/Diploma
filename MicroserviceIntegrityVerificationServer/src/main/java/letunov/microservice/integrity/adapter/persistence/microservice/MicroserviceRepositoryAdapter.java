@@ -36,6 +36,12 @@ public class MicroserviceRepositoryAdapter implements MicroserviceRepository {
     }
 
     @Override
+    public List<Microservice> findMicroservicesRequiredMicroservices(List<String> microservicesNames) {
+        var names = microserviceNeo4jRepository.findMicroservicesRequiredMicroservices(microservicesNames);
+        return microserviceNeo4jRepository.findAllByNameIn(names);
+    }
+
+    @Override
     public void saveAll(List<Microservice> microservices) {
         microserviceNeo4jRepository.saveAll(microservices);
     }

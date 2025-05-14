@@ -1,8 +1,8 @@
 package letunov.microservice.integrity.adapter.persistence.contract;
 
 
-import letunov.microservice.integrity.app.api.graph.ConsumingContractInfo;
-import letunov.microservice.integrity.app.api.graph.ProvidingContractInfo;
+import letunov.microservice.integrity.domain.graph.microservice.ConsumingContractInfo;
+import letunov.microservice.integrity.domain.graph.microservice.ProvidingContractInfo;
 import letunov.microservice.integrity.app.api.repo.ContractRepository;
 import letunov.microservice.integrity.domain.contract.Contract;
 import lombok.RequiredArgsConstructor;

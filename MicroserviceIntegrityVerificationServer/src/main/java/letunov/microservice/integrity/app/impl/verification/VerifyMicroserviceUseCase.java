@@ -1,6 +1,6 @@
 package letunov.microservice.integrity.app.impl.verification;
 
-import letunov.microservice.integrity.app.api.graph.MicroserviceInfo;
+import letunov.microservice.integrity.domain.graph.microservice.MicroserviceInfo;
 import letunov.microservice.integrity.app.api.repo.GraphRepository;
 import letunov.microservice.integrity.app.api.repo.MicroserviceRepository;
 import letunov.microservice.integrity.app.api.verification.MicroserviceVerificationService;
@@ -8,8 +8,6 @@ import letunov.microservice.integrity.app.api.verification.VerificationInfo;
 import letunov.microservice.integrity.app.api.verification.VerifyMicroserviceInbound;
 import letunov.microservice.integrity.app.impl.graph.FillMicroserviceWithInfoDelegate;
 import letunov.microservice.integrity.app.impl.graph.GetGraphDelegate;
-import letunov.microservice.integrity.domain.issue.Issue;
-import letunov.microservice.integrity.domain.issue.IssueType;
 import letunov.microservice.integrity.domain.microservice.Microservice;
 import letunov.microservice.integrity.domain.microservice.UsesRelationship;
 import lombok.RequiredArgsConstructor;
@@ -49,13 +47,14 @@ public class VerifyMicroserviceUseCase implements VerifyMicroserviceInbound {
         microservicesToGetGraph.addAll(getRequiredMicroservices(microservice));
         microservicesToGetGraph.add(microservice);
 
-        var issues = microserviceVerificationService.verify(microservice);
+        var issues = microserviceVerificationService.verify(List.of(microservice));
         var graph = getGraph.execute(microservicesToGetGraph, issues);
         graph = graphRepository.save(graph);
 
-        return new VerificationInfo()
-            .setGraphLink(frontUrl + "/graph/%s".formatted(graph.getId()))
-            .setMessages(graph.getMessages());
+//        return new VerificationInfo()
+//            .setGraphLink(frontUrl + "/graph/%s".formatted(graph.getId()))
+//            .setMessages(graph.getMessages());
+        return null;
     }
 
     // ===================================================================================================================

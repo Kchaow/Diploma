@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Component
@@ -25,7 +26,7 @@ public class VerifyGraphUseCase implements VerifyGraphInbound {
     public void execute() {
         Set<Issue> issues = new HashSet<>();
         issueRepository.deleteAll();
-        microserviceRepository.findAll().forEach(microservice -> issues.addAll(microserviceVerificationService.verify(microservice)));
+        microserviceRepository.findAll().forEach(microservice -> issues.addAll(microserviceVerificationService.verify(List.of(microservice))));
         issueRepository.saveAll(new ArrayList<>(issues));
     }
 }

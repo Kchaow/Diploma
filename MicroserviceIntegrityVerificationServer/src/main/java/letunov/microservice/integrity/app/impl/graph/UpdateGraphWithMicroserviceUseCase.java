@@ -3,7 +3,7 @@ package letunov.microservice.integrity.app.impl.graph;
 import letunov.microservice.integrity.app.api.repo.ContractRepository;
 import letunov.microservice.integrity.app.api.repo.IssueRepository;
 import letunov.microservice.integrity.app.api.repo.MicroserviceRepository;
-import letunov.microservice.integrity.app.api.graph.MicroserviceInfo;
+import letunov.microservice.integrity.domain.graph.microservice.MicroserviceInfo;
 import letunov.microservice.integrity.app.api.graph.UpdateGraphWithMicroserviceInbound;
 import letunov.microservice.integrity.app.api.verification.MicroserviceVerificationService;
 import letunov.microservice.integrity.domain.issue.Issue;
@@ -58,7 +58,7 @@ public class UpdateGraphWithMicroserviceUseCase implements UpdateGraphWithMicros
 
     private void verify(Microservice microservice) {
         clearIssues(microservice);
-        var issues = microserviceVerificationService.verify(microservice);
+        var issues = microserviceVerificationService.verify(List.of(microservice));
         issueRepository.saveAll(issues.stream().distinct().toList());
     }
 

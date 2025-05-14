@@ -54,13 +54,6 @@ public class GetGraphDelegate {
                 }
                 return;
             }
-            if (issue.getIssueType() == MICROSERVICE_DOES_NOT_EXIST) {
-                var node = new Node()
-                    .setId(issue.getCausedAsProviderByAsString())
-                    .setStatus(ERROR);
-                node.getMessages().add(getMessage(issue));
-                nodes.add(node);
-            }
             if (nodeMap.containsKey(issue.getCausedAsConsumerByAsString())) {
                 var node = nodeMap.get(issue.getCausedAsConsumerByAsString());
                 node.setStatus(ERROR);
@@ -78,7 +71,7 @@ public class GetGraphDelegate {
         if (issue.getIssueType() == NOT_REQUIRED_CONTRACT) {
             return ONE_SIDE_ISSUE_MESSAGE_TEMPLATE.formatted(issue.getIssueLevel(), issue.getCausedAsProviderByAsString(), issue.getDescription());
         }
-        return TWO_SIDE_ISSUE_MESSAGE_TEMPLATE.formatted(issue.getIssueLevel(), issue.getCausedAsProviderByAsString(), issue.getCausedAsConsumerByAsString(), issue.getDescription());
+        return TWO_SIDE_ISSUE_MESSAGE_TEMPLATE.formatted(issue.getIssueLevel(), issue.getCausedAsConsumerByAsString(), issue.getCausedAsProviderByAsString(), issue.getDescription());
     }
 
     private List<String> getMessages(List<Issue> issues) {
@@ -89,30 +82,10 @@ public class GetGraphDelegate {
     }
 
     private void fillEdgesWithIssues(List<Edge> edges, List<Issue> issues) {
-        edges.addAll(getEdgesOfDoesNotExist(issues));
         edges.forEach(edge ->
             popIssue(issues, edge).ifPresent(issue ->
                     edge.setMessage(getMessage(issue))
                         .setStatus(ERROR)));
-    }
-
-    private List<Edge> getEdgesOfDoesNotExist(List<Issue> issues) {
-        List<Edge> edges = new ArrayList<>();
-        for (int i = 0; i < issues.size(); i++) {
-            var issue = issues.get(i);
-            if (issue.getIssueType() == MICROSERVICE_DOES_NOT_EXIST) {
-                edges.add(new Edge()
-                    .setSource(issue.getCausedAsConsumerByAsString())
-                    .setTarget(issue.getCausedAsProviderByAsString())
-                    .setStatus(ERROR)
-                    .setMessage(getMessage(issue))
-                    .setContractName(issue.getAssociatedContracts().getFirst().getName())
-                    .setId(String.valueOf(issue.hashCode())));
-                issues.remove(i);
-                i--;
-            }
-        }
-        return edges;
     }
 
     private Optional<Issue> popIssue(List<Issue> issues, Edge edge) {
@@ -149,8 +122,10 @@ public class GetGraphDelegate {
     private boolean doesEdgeHasIssue(Edge edge, Issue issue) {
         return
             issue.getCausedAsConsumerByAsString() != null &&
-            issue.getCausedAsProviderBy().getName().equals(edge.getTarget()) &&
-            issue.getCausedAsConsumerBy().getName().equals(edge.getSource()) &&
-            issue.getAssociatedContracts().getFirst().getName().equals(edge.getContractName());
+                issue.getCausedAsProviderBy() != null &&
+                issue.getCausedAsConsumerBy() != null &&
+                issue.getCausedAsProviderBy().getName().equals(edge.getTarget()) &&
+                issue.getCausedAsConsumerBy().getName().equals(edge.getSource()) &&
+                issue.getAssociatedContracts().getFirst().getName().equals(edge.getContractName());
     }
 }

@@ -4,7 +4,7 @@ import Graph from "./Graph";
 import Display from "./Display";
 import * as api from '../../api/MicroserviceVerificationAPI';
 
-const Main = () => {
+const GraphPage = () => {
     const { graphId } = useParams();
     const [data, setData] = useState(null);
 
@@ -22,4 +22,4 @@ const Main = () => {
     </Fragment>
 }
 
-export default Main;
+export default GraphPage;
