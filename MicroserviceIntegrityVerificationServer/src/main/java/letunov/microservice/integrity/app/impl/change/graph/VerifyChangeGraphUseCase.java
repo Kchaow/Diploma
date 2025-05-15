@@ -4,14 +4,15 @@ import letunov.microservice.integrity.app.api.change.graph.VerificationResult;
 import letunov.microservice.integrity.app.api.change.graph.VerifyChangeGraphInbound;
 import letunov.microservice.integrity.app.api.repo.ChangeGraphRepository;
 import letunov.microservice.integrity.app.api.repo.ContractRepository;
-import letunov.microservice.integrity.app.api.repo.GraphRepository;
 import letunov.microservice.integrity.app.api.repo.MicroserviceRepository;
 import letunov.microservice.integrity.app.api.verification.MicroserviceVerificationService;
-import letunov.microservice.integrity.app.impl.graph.FillMicroserviceWithInfoDelegate;
 import letunov.microservice.integrity.app.impl.graph.GetGraphDelegate;
 import letunov.microservice.integrity.domain.contract.Contract;
+import letunov.microservice.integrity.domain.contract.Edge;
+import letunov.microservice.integrity.domain.contract.Node;
 import letunov.microservice.integrity.domain.graph.ChangeGraph;
 import letunov.microservice.integrity.domain.graph.Graph;
+import letunov.microservice.integrity.domain.graph.GraphElementStatus;
 import letunov.microservice.integrity.domain.graph.microservice.ChangeGraphStatus;
 import letunov.microservice.integrity.domain.graph.microservice.ConsumingContractInfo;
 import letunov.microservice.integrity.domain.graph.microservice.MicroserviceInfo;
@@ -26,22 +27,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+import static letunov.microservice.integrity.domain.graph.GraphElementStatus.OK;
 
 @Component
 @RequiredArgsConstructor
 public class VerifyChangeGraphUseCase implements VerifyChangeGraphInbound {
     private final ChangeGraphRepository changeGraphRepository;
-    private final FillMicroserviceWithInfoDelegate fillMicroserviceWithInfoDelegate;
     private final MicroserviceRepository microserviceRepository;
     private final GetGraphDelegate getGraphDelegate;
     private final MicroserviceVerificationService microserviceVerificationService;
     private final ContractRepository contractRepository;
-    private final GraphRepository graphRepository;
 
     @Override
     @Transactional
@@ -68,12 +69,23 @@ public class VerifyChangeGraphUseCase implements VerifyChangeGraphInbound {
         changeGraph.setChangeGraphStatus(ChangeGraphStatus.DONE);
         changeGraphRepository.save(changeGraph);
 
-        return new VerificationResult();
+
+        return new VerificationResult(getGraphStatus(graph));
     }
 
     // ===================================================================================================================
     // = Implementation
     // ===================================================================================================================
+
+    private GraphElementStatus getGraphStatus(Graph graph) {
+        return Stream.concat(
+            graph.getEdges().stream().map(Edge::getStatus),
+            graph.getNodes().stream().map(Node::getStatus)
+        )
+            .filter(Objects::nonNull)
+            .max(Comparator.comparingInt(GraphElementStatus::getLevel))
+            .orElse(OK);
+    }
 
     private List<Microservice> getRequiredMicroservices(Map<String, Microservice> microservicesMap) {
         return microservicesMap.values().stream()

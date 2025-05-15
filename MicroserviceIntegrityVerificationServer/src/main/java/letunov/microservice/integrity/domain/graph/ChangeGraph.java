@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,4 +25,5 @@ public class ChangeGraph {
     private List<MicroserviceInfo> commitedMicroservices = new ArrayList<>();
     private Graph graph;
     private ChangeGraphStatus changeGraphStatus;
+    private LocalDateTime dateTime;
 }
